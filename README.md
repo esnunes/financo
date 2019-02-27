@@ -2,6 +2,8 @@
 
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
 
+Financo is a command line interface to download N26 bank transactions and create a ledger-cli compatible file.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -20,7 +22,12 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+``` bash
+financo -h
+# usage: financo [options] <username> <password>
+#     -v, --version                    print version
+#     -h, --help                       print this help
+```
 
 ## Development
 
