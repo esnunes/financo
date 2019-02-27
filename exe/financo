@@ -5,6 +5,8 @@ lib = File.expand_path("../lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require "fileutils"
+require "net/http"
+
 require "financo"
 require "financo/n26/bank"
 require "financo/n26/client"
@@ -40,7 +42,6 @@ p = Financo::CLI::Program.new(
 
 begin
   p.run
-  puts p.stats
 ensure
   http.finish if http.started?
 
