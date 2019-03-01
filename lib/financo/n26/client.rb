@@ -8,6 +8,8 @@ module Financo
       def initialize(http, base_uri)
         @http = http
         @base_uri = base_uri
+
+        @access_token = nil
       end
 
       def login(username, password)
@@ -25,8 +27,6 @@ module Financo
         }
 
         @access_token = data["access_token"]
-        @refres_token = data["refresh_token"]
-        @expires_in = data["expires_in"]
 
         [code, data]
       end
