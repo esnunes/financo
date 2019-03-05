@@ -5,7 +5,6 @@ lib = File.expand_path("../lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require "fileutils"
-require "net/http"
 
 require "financo"
 require "financo/n26/bank"
@@ -20,11 +19,8 @@ FileUtils.mkdir_p(base_dir, mode: 0o700)
 journal_name = "journal-#{Time.now.to_i}.ledger"
 journal = Financo::Journal.new(File.open(journal_name, "w"))
 
-uri = URI.parse("https://api.tech26.de")
-http = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https")
-
 bank = Financo::N26::Bank.new(
-  Financo::N26::Client.new(http, uri),
+  Financo::N26::Client.new,
   Financo::N26::HistoryStore.new(base_dir),
 )
 
@@ -43,8 +39,6 @@ p = Financo::CLI::Program.new(
 begin
   p.run
 ensure
-  http.finish if http.started?
-
   # close journal stream
   journal.close
 

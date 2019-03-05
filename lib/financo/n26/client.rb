@@ -1,13 +1,18 @@
 # frozen_string_literal: true
 
 require "json"
+require "net/http"
 
 module Financo
   module N26
     class Client
-      def initialize(http, base_uri)
-        @http = http
-        @base_uri = base_uri
+      DEFAULT_ENDPOINT = "https://api.tech26.de"
+
+      def initialize(endpoint: DEFAULT_ENDPOINT)
+        @base_uri = URI.parse(endpoint)
+
+        @http = Net::HTTP.new(@base_uri.host, @base_uri.port)
+        @http.use_ssl = @base_uri.scheme == "https"
 
         @access_token = nil
       end
