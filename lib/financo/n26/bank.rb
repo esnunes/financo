@@ -56,7 +56,7 @@ module Financo
         Financo::Transaction.new(
           data['id'],
           data['createdTS'],
-          data['merchantName'] || h['partnerName'],
+          data['merchantName'] || data['partnerName'],
           data['referenceText'],
           checking,
           data['amount'],
