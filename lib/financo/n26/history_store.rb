@@ -9,7 +9,6 @@ module Financo
     class HistoryStore
       def initialize(base_dir: File.join(Dir.pwd, '.financo'))
         @base_dir = base_dir
-        puts "basedir = #{base_dir}"
 
         FileUtils.mkdir_p(@base_dir, mode: 0o700)
       end
