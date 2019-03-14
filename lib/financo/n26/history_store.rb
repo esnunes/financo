@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-require "fileutils"
-require "yaml"
+require 'fileutils'
+require 'yaml'
 
 module Financo
   module N26
+    # HistoryStore
     class HistoryStore
-      def initialize(base_dir: File.join(Dir.pwd, ".financo"))
+      def initialize(base_dir: File.join(Dir.pwd, '.financo'))
         @base_dir = base_dir
         puts "basedir = #{base_dir}"
 
@@ -18,16 +19,16 @@ module Financo
 
         FileUtils.touch(path)
 
-        File.open(path, "r+") do |f|
+        File.open(path, 'r+') do |f|
           data = YAML.safe_load(f) || {}
-          data = data.reduce({}) { |m, (k, v)| m[k.to_sym] = v; m }
+          data = data.each_with_object({}) { |(k, v), m| m[k.to_sym] = v; }
 
           History.new(**data)
         end
       end
 
       def save(id, history)
-        File.open(filename(id), "w") { |f| f.write(history.dump) }
+        File.open(filename(id), 'w') { |f| f.write(history.dump) }
       end
 
       private

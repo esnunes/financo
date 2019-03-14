@@ -2,6 +2,7 @@
 
 module Financo
   module N26
+    # ClientError
     class ClientError < StandardError
       attr_reader :code, :body
 

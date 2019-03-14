@@ -2,6 +2,7 @@
 
 module Financo
   module N26
+    # Bank
     class Bank
       MAX_PENDING_SECONDS = 31 * 24 * 60 * 60
 
@@ -16,8 +17,7 @@ module Financo
 
         @account = nil
       rescue Financo::N26::ClientError
-        raise Financo::Bank::AuthenticationError
-                .new("invalid username or password")
+        raise Financo::Bank::AuthenticationError, 'invalid username or password'
       end
 
       def account
@@ -25,18 +25,16 @@ module Financo
           begin
             data = @client.me
 
-            Financo::Bank::Account.new(*data.values_at("id", "firstName"))
+            Financo::Bank::Account.new(*data.values_at('id', 'firstName'))
           end
       end
 
       def transactions(checking:, **options)
-        puts "before"
         history_store = Financo::N26::HistoryStore.new(**options)
-        puts "after"
         history = history_store.load(account.id)
 
         start_date = history.loaded_at - MAX_PENDING_SECONDS
-        start_date = start_date > 0 ? start_date : 0
+        start_date = start_date.positive? ? start_date : 0
 
         end_date = Time.now.to_i
 
@@ -54,17 +52,17 @@ module Financo
 
       private
 
-      def parse_n26_transaction(checking, h)
+      def parse_n26_transaction(checking, data)
         Financo::Transaction.new(
-          h["id"],
-          h["createdTS"],
-          h["merchantName"] || h["partnerName"],
-          h["referenceText"],
+          data['id'],
+          data['createdTS'],
+          data['merchantName'] || h['partnerName'],
+          data['referenceText'],
           checking,
-          h["amount"],
-          h["currencyCode"],
-          h["exchangeRate"],
-          h["originalCurrency"],
+          data['amount'],
+          data['currencyCode'],
+          data['exchangeRate'],
+          data['originalCurrency']
         )
       end
     end

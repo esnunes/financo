@@ -1,28 +1,29 @@
 # frozen_string_literal: true
 
-require "yaml"
+require 'yaml'
 
 module Financo
   module N26
+    # History
     class History
-      Entry = Struct.new(:id, :date, :amount) {
+      Entry = Struct.new(:id, :date, :amount) do
         def encode_with(coder)
           coder.tag = nil
           coder.map = {
-            "id" => id,
-            "date" => date,
-            "amount" => amount,
+            'id' => id,
+            'date' => date,
+            'amount' => amount
           }
         end
-      }
+      end
 
       attr_accessor :loaded_at
 
       def initialize(entries: [], loaded_at: 0)
         @loaded_at = loaded_at
-        @entries = (entries || []).each_with_object({}) { |e, m|
-          m[e["id"]] = Entry.new(*e.values_at("id", "date", "amount"))
-        }
+        @entries = (entries || []).each_with_object({}) do |e, m|
+          m[e['id']] = Entry.new(*e.values_at('id', 'date', 'amount'))
+        end
       end
 
       def add(id, date, amount)
@@ -38,8 +39,8 @@ module Financo
 
       def dump
         {
-          "entries" => @entries.values,
-          "loaded_at" => @loaded_at,
+          'entries' => @entries.values,
+          'loaded_at' => @loaded_at
         }.to_yaml
       end
     end

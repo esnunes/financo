@@ -1,31 +1,32 @@
 # frozen_string_literal: true
 
 module Financo
+  # Journal
   class Journal
     def initialize(stream)
       @stream = stream
     end
 
-    def add(t)
-      case t.status
+    def add(transaction)
+      case transaction.status
       when :added
-        write(t)
+        write(transaction)
       when :modified, :unknown
-        comment(t)
+        comment(transaction)
       end
     end
 
     private
 
-    def comment(o)
-      o.to_s.each_line do |s|
+    def comment(transaction)
+      transaction.to_s.each_line do |s|
         @stream.puts "; #{s}"
       end
       @stream.puts
     end
 
-    def write(o)
-      @stream.puts o
+    def write(transaction)
+      @stream.puts transaction
       @stream.puts
     end
   end

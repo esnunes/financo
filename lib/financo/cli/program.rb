@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-require "optparse"
+require 'optparse'
 
 module Financo
   module CLI
     ParserError = Class.new(StandardError)
     ProgramError = Class.new(StandardError)
 
+    # Program
     class Program
       def initialize(stdout: STDOUT)
         @stdout = stdout
@@ -28,7 +29,7 @@ module Financo
             .each { |t| journal.add(t) }
         end
       rescue Financo::Bank::AuthenticationError => e
-        raise ProgramError.new("Could not authenticate with the bank: #{e}")
+        raise ProgramError, "Could not authenticate with the bank: #{e}"
       end
 
       private
@@ -42,12 +43,12 @@ module Financo
       end
 
       def open_journal(filename:)
-        return yield(Journal.new(STDOUT)) if filename == "STDOUT"
+        return yield(Journal.new(STDOUT)) if filename == 'STDOUT'
 
-        raise ProgramError.new("Output file already exists: #{filename}") if
+        raise ProgramError, "Output file already exists: #{filename}" if
           File.exist?(filename)
 
-        File.open(filename, "w") do |f|
+        File.open(filename, 'w') do |f|
           yield Journal.new(f)
         end
       end

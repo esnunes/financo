@@ -1,7 +1,5 @@
 # Financo
 
-[![Ruby Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://github.com/testdouble/standard)
-
 Financo is a command line interface to download N26 bank transactions and create a ledger-cli compatible file.
 
 ## Installation
