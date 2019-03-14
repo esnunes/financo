@@ -12,8 +12,9 @@ end
 
 group :development do
   gem "rake"
+  gem "bundler", "~> 2.0"
 end
 
 group :test do
-  gem "rspec"
+  gem "minitest"
 end

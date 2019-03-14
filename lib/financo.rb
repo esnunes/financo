@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
-require "financo/version"
-require "financo/account_info"
+require "financo/bank"
 require "financo/journal"
 require "financo/transaction"
+require "financo/version"
 
 module Financo
+  autoload :CLI, "financo/cli"
+  autoload :N26, "financo/n26"
 end

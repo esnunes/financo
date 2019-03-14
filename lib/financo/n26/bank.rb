@@ -1,52 +1,66 @@
 # frozen_string_literal: true
 
-require "financo/account_info"
-require "financo/transaction"
-
 module Financo
   module N26
     class Bank
-      def initialize(client, history_store)
+      MAX_PENDING_SECONDS = 31 * 24 * 60 * 60
+
+      def initialize(client: Client.new)
         @client = client
-        @history_store = history_store
+
+        @account = nil
       end
 
-      def info(username, password)
+      def authenticate(username, password)
         @client.login(username, password)
 
-        _, data = @client.me
-
-        Financo::AccountInfo.new(*data.values_at("id", "firstName"))
-      rescue
-        # ignore exception and return nil
+        @account = nil
+      rescue Financo::N26::ClientError
+        raise Financo::Bank::AuthenticationError
+                .new("invalid username or password")
       end
 
-      def transactions(id, loaded_at, retention_days)
-        history = @history_store.load(id, loaded_at)
+      def account
+        @account ||=
+          begin
+            data = @client.me
 
-        start_date = loaded_at
-        start_date -= retention_days * 24 * 60 * 60 * 1000
+            Financo::Bank::Account.new(*data.values_at("id", "firstName"))
+          end
+      end
+
+      def transactions(checking:, **options)
+        puts "before"
+        history_store = Financo::N26::HistoryStore.new(**options)
+        puts "after"
+        history = history_store.load(account.id)
+
+        start_date = history.loaded_at - MAX_PENDING_SECONDS
         start_date = start_date > 0 ? start_date : 0
 
-        _, transactions = @client.transactions(start_date)
-        transactions = transactions
-          .map { |t| from_n26(t) }
-          .each { |t| t.status = history.add(t.id, t.date, t.amount) }
+        end_date = Time.now.to_i
 
-        @history_store.save(id, history)
+        result =
+          @client
+            .transactions(from: start_date, to: end_date)
+            .map { |t| parse_n26_transaction(checking, t) }
+            .each { |t| t.status = history.add(t.id, t.date, t.amount) }
 
-        transactions
+        history.loaded_at = end_date
+        history_store.save(account.id, history)
+
+        result
       end
 
       private
 
-      def from_n26(h)
+      def parse_n26_transaction(checking, h)
         Financo::Transaction.new(
           h["id"],
           h["createdTS"],
           h["merchantName"] || h["partnerName"],
           h["referenceText"],
-          nil,
+          checking,
           h["amount"],
           h["currencyCode"],
           h["exchangeRate"],

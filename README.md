@@ -18,15 +18,23 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install abc
+    $ gem install financo
 
 ## Usage
 
 ``` bash
-financo -h
-# usage: financo [options] <username> <password>
-#     -v, --version                    print version
-#     -h, --help                       print this help
+$ financo -h
+
+# Download and convert N26 bank transactions into a Ledger journal
+#
+# Options:
+#         --checking ACCOUNT_NAME      bank checking account (default 'Bank:Checking')
+#     -o, --output OUTPUT              journal output: filename or STDOUT (default: journal-<timestamp>.ledger)
+#     -v, --version                    show version
+#     -h, --help                       show this message
+#
+# Usage:
+#   financo [options] <username> <password>
 ```
 
 ## Development

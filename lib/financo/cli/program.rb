@@ -4,86 +4,51 @@ require "optparse"
 
 module Financo
   module CLI
+    ParserError = Class.new(StandardError)
+    ProgramError = Class.new(StandardError)
+
     class Program
-      attr_reader :stats
+      def initialize(stdout: STDOUT)
+        @stdout = stdout
 
-      def initialize(opts)
-        @stdout = opts[:stdout]
-        @stdin = opts[:stdin]
-        @version = opts[:version]
-
-        @journal = opts[:journal]
-
-        @account_info = opts[:account_info]
-        @account_transactions = opts[:account_transactions]
-        @config_store = opts[:config_store]
-
-        @stats = {}
+        @parser = Parser.new
       end
 
-      def run(argv: ARGV)
-        op = OptionParser.new
+      def run(argv: ARGV, bank: Financo::N26::Bank.new)
+        args, options = @parser.parse(argv)
 
-        op.banner = "usage: financo [options] <username> <password>"
+        return show_help if options[:help]
+        return show_version if options[:version]
 
-        op.on("-v", "--version", "print version")
-        op.on("-h", "--help", "print this help")
+        bank.authenticate(*args)
 
-        params = {}
-        args = op.parse(argv, into: params)
-
-        if params[:version]
-          @stdout.puts "financo v#{@version}"
-          return
+        open_journal(filename: options[:output]) do |journal|
+          bank
+            .transactions(checking: options[:checking])
+            .each { |t| journal.add(t) }
         end
+      rescue Financo::Bank::AuthenticationError => e
+        raise ProgramError.new("Could not authenticate with the bank: #{e}")
+      end
 
-        if params[:help] || args.length < 2
-          @stdout.puts op.help
-          return
-        end
+      private
 
-        account_info = @account_info.call(*args)
-        if account_info.nil?
-          @stdout.puts "Invalid username or password"
-          return
-        end
+      def show_help
+        @stdout.puts @parser.help
+      end
 
-        @stdout.puts "Welcome #{account_info.name}"
+      def show_version
+        @stdout.puts "Financo version #{Financo::VERSION}"
+      end
 
-        config = @config_store.load(account_info.id)
-        if config.checking.nil?
-          @stdout << "Checking account: "
-          config.checking = @stdin.gets.chomp
-        end
+      def open_journal(filename:)
+        return yield(Journal.new(STDOUT)) if filename == "STDOUT"
 
-        transactions = @account_transactions.call(
-          config.id,
-          config.loaded_at,
-          config.retention_days,
-        )
+        raise ProgramError.new("Output file already exists: #{filename}") if
+          File.exist?(filename)
 
-        config.loaded_at = Time.now.to_i * 1000
-
-        @config_store.save(account_info.id, config)
-
-        transactions.each do |t|
-          t.account = config.checking
-
-          @stats[t.status] = (@stats[t.status] || 0) + 1 unless t.status.nil?
-
-          case t.status
-          when :added
-            @journal.write(t)
-          when :modified, :unknown
-            @journal.comment(t)
-          end
-        end
-
-        @stdout.puts "Nothing changed since last execution" if @stats.empty?
-        unless @stats.empty?
-          @stats.each do |status, value|
-            @stdout.puts "#{value} #{status} transaction(s)"
-          end
+        File.open(filename, "w") do |f|
+          yield Journal.new(f)
         end
       end
     end

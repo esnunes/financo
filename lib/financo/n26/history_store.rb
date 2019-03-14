@@ -3,20 +3,27 @@
 require "fileutils"
 require "yaml"
 
-require "financo/n26/history"
-
 module Financo
   module N26
     class HistoryStore
-      def initialize(base_dir)
+      def initialize(base_dir: File.join(Dir.pwd, ".financo"))
         @base_dir = base_dir
+        puts "basedir = #{base_dir}"
+
+        FileUtils.mkdir_p(@base_dir, mode: 0o700)
       end
 
-      def load(id, *args)
-        name = filename(id)
+      def load(id)
+        path = filename(id)
 
-        FileUtils.touch(name)
-        File.open(name) { |f| History.new(YAML.safe_load(f), *args) }
+        FileUtils.touch(path)
+
+        File.open(path, "r+") do |f|
+          data = YAML.safe_load(f) || {}
+          data = data.reduce({}) { |m, (k, v)| m[k.to_sym] = v; m }
+
+          History.new(**data)
+        end
       end
 
       def save(id, history)

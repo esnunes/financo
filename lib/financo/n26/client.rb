@@ -8,68 +8,75 @@ module Financo
     class Client
       DEFAULT_ENDPOINT = "https://api.tech26.de"
 
-      def initialize(endpoint: DEFAULT_ENDPOINT)
+      def initialize(endpoint: DEFAULT_ENDPOINT, access_token: nil)
         @base_uri = URI.parse(endpoint)
+        @access_token = access_token
 
         @http = Net::HTTP.new(@base_uri.host, @base_uri.port)
         @http.use_ssl = @base_uri.scheme == "https"
-
-        @access_token = nil
       end
 
       def login(username, password)
-        code, data = request {
-          req = Net::HTTP::Post.new(base_uri("/oauth/token"))
-          req.basic_auth("my-trusted-wdpClient", "secret")
-          req["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36"
-          req.set_form_data(
-            "username" => username,
-            "password" => password,
-            "grant_type" => "password",
+        data = post("/oauth/token") do |r|
+          r["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) " \
+                            "AppleWebKit/537.36 (KHTML, like Gecko) " \
+                            "Chrome/48.0.2564.109 Safari/537.36"
+          r.basic_auth("my-trusted-wdpClient", "secret")
+          r.set_form_data(
+            username: username,
+            password: password,
+            grant_type: "password",
           )
-
-          req
-        }
+        end
 
         @access_token = data["access_token"]
-
-        [code, data]
       end
 
-      def transactions(from, to = Time.now.to_i * 1000, limit = 10000)
-        result = request {
-          params = {
-            from: from,
-            to: to,
-            limit: limit,
-          }
-
-          uri = base_uri("/api/smrt/transactions")
-          uri.query = URI.encode_www_form(params)
-
-          Net::HTTP::Get.new(uri)
+      def transactions(
+            from: nil,
+            to: Time.now.to_i,
+            limit: 10000,
+            text_filter: nil,
+            pending: false
+          )
+        query = {
+          limit: limit,
+          pending: pending,
         }
 
-        result = yield(*result) if block_given?
+        unless from.nil? || to.nil?
+          query[:from] = from * 1000
+          query[:to] = to * 1000
+        end
 
-        result
+        query[:textFilter] = text_filter unless text_filter.nil?
+
+        get("/api/smrt/transactions", query)
       end
 
       def me
+        get("/api/me")
+      end
+
+      private
+
+      def get(path, query = {})
         request do
-          Net::HTTP::Get.new(base_uri("/api/me"))
+          req = Net::HTTP::Get.new(uri(path, query))
+          yield req if block_given?
+          req
         end
       end
 
-      def base_uri(path)
-        uri = @base_uri.clone
-        uri.path = path
-        uri
+      def post(path, query = {})
+        request do
+          req = Net::HTTP::Post.new(uri(path, query))
+          yield req if block_given?
+          req
+        end
       end
 
       def request
-        raise "Invalid usage: request requires a block" unless block_given?
-
         req = yield
 
         req["Authorization"] = "Bearer #{@access_token}" if @access_token
@@ -78,9 +85,16 @@ module Financo
 
         case res.code.to_i
         when 200..399
-          [res.code.to_i, JSON.parse(res.body)]
+          JSON.parse(res.body)
         else
           raise ClientError.new(res.code, res.body)
+        end
+      end
+
+      def uri(path, query = {})
+        @base_uri.clone.tap do |u|
+          u.path = path
+          u.query = URI.encode_www_form(query) unless query.empty?
         end
       end
     end

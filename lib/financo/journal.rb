@@ -6,6 +6,17 @@ module Financo
       @stream = stream
     end
 
+    def add(t)
+      case t.status
+      when :added
+        write(t)
+      when :modified, :unknown
+        comment(t)
+      end
+    end
+
+    private
+
     def comment(o)
       o.to_s.each_line do |s|
         @stream.puts "; #{s}"
@@ -16,10 +27,6 @@ module Financo
     def write(o)
       @stream.puts o
       @stream.puts
-    end
-
-    def close
-      @stream.close
     end
   end
 end

@@ -11,6 +11,10 @@ module Financo
         @code = code
         @body = body
       end
+
+      def to_s
+        puts "code [#{@code}], body [#{@body}]"
+      end
     end
   end
 end

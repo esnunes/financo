@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "fileutils"
 require "yaml"
 
 module Financo
@@ -17,7 +16,9 @@ module Financo
         end
       }
 
-      def initialize(entries, loaded_at)
+      attr_accessor :loaded_at
+
+      def initialize(entries: [], loaded_at: 0)
         @loaded_at = loaded_at
         @entries = (entries || []).each_with_object({}) { |e, m|
           m[e["id"]] = Entry.new(*e.values_at("id", "date", "amount"))
@@ -28,13 +29,18 @@ module Financo
         p = @entries[id]
         n = @entries[id] = Entry.new(id, date, amount)
 
-        return :unknown if p.nil? && date < @loaded_at
+        loaded_at_ms = @loaded_at * 1000
+
+        return :unknown if p.nil? && date < loaded_at_ms
         return :added if p.nil?
         return :modified if n != p
       end
 
       def dump
-        @entries.values.to_yaml
+        {
+          "entries" => @entries.values,
+          "loaded_at" => @loaded_at,
+        }.to_yaml
       end
     end
   end
