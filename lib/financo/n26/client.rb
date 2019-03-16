@@ -88,7 +88,7 @@ module Financo
         when 200..399
           JSON.parse(res.body)
         else
-          raise ClientError.new(res.code, res.body)
+          raise ClientError.from_response(res)
         end
       end
 

@@ -16,7 +16,9 @@ module Financo
         @client.login(username, password)
 
         @account = nil
-      rescue Financo::N26::ClientError
+      rescue Financo::N26::Client::BadRequestError
+        # based on RFC 6749, it returns bad request (400) instead of
+        # unauthorized (401) when authentication fails.
         raise Financo::Bank::AuthenticationError, 'invalid username or password'
       end
 
