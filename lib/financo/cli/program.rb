@@ -4,9 +4,6 @@ require 'optparse'
 
 module Financo
   module CLI
-    ParserError = Class.new(StandardError)
-    ProgramError = Class.new(StandardError)
-
     # Program
     class Program
       def initialize(stdout: STDOUT)
