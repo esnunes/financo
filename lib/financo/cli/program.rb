@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'optparse'
-
 module Financo
   module CLI
     # Program
