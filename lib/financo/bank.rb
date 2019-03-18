@@ -2,7 +2,8 @@
 
 module Financo
   module Bank
-    AuthenticationError = Class.new(StandardError)
+    BankError = Class.new(StandardError)
+    AuthenticationError = Class.new(BankError)
 
     Account = Struct.new(:id, :name)
   end
